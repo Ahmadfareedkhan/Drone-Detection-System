@@ -48,9 +48,9 @@ source_cam = 0  # Webcam index (usually 0 for the default camera)
 # For demonstration, you can uncomment one of these lines based on your needs:
 
 # To show an image
-image = cv2.imread(source_image)
-processed_image = process_frame(image)
-cv2.imshow('YOLO Object Detection', processed_image)
+# image = cv2.imread(source_image)
+# processed_image = process_frame(image)
+# cv2.imshow('YOLO Object Detection', processed_image)
 
 # To show video or live cam feed
 show_source(source_cam)  # Replace 'source_video' with 'source_cam' to use webcam
