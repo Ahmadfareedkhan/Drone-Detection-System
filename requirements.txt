@@ -1,0 +1,7 @@
+Pillow
+opencv-python
+streamlit
+torch
+matplotlib
+numpy
+requests
