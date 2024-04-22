@@ -9,10 +9,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 model = YOLO(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
 
 def predict_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    results = model.track(image, conf=0.3, iou=0.5)
-    output_image = results.render()[0]
-    return cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
+    return model.track(source=image, conf=0.3, iou=0.5, show=True)
 
 def predict_video(video):
     return model.track(video, conf=0.3, iou=0.5, show=True)
