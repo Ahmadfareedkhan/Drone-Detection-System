@@ -6,12 +6,12 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 # Load your trained model
-model = YOLO(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
+model = YOLO(r"C:\Users\Falcon\Downloads\Projects\Falcon Projects\Drone-Detection-System\drone_detection_system\best.pt")
 
 def predict_image(image):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     results = model.track(image, conf=0.3, iou=0.5)
-    output_image = results.render()[0]
+    output_image = results[0]
     return cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
 
 def predict_video(video):
@@ -20,7 +20,11 @@ def predict_video(video):
 with gr.Blocks() as demo:
     gr.Markdown("### Drone Detection System")
     with gr.Tab("Introduction"):
-        gr.Markdown("Welcome to the Drone Detection System.")
+        gr.Markdown("This Application helps in detection of DRONES in an IMAGE, VIDEO or from your WEBCAM depending on your App mode.")
+        gr.Markdown("""You Don't Necessarily need a Drone to run this app you can use an image from google.
+
+
+    SAMPLE OUTPUT:\n""")
     with gr.Tab("Upload Image"):
         image_input = gr.Image()
         image_output = gr.Image()
