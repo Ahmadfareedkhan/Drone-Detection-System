@@ -1,96 +1,74 @@
-import torch
-from PIL import Image
-import numpy as np
-import streamlit as st
+import gradio as gr
+from ultralytics import YOLO
 import cv2
-import requests
-import json
-import torchvision.transforms as transforms
+import os
+import numpy as np
+import threading
 
-# Define the image transformation
-def prepare_image(image):
-    transform = transforms.Compose([
-        transforms.Resize((640, 640)),  # Adjust the size as per your model's requirement
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    return transform(image).unsqueeze(0)  # Add batch dimension
+# Make sure to use the correct model initialization for YOLO
+model = YOLO(r"C:\Users\Falcon\Downloads\Projects\Falcon Projects\Drone-Detection-System\drone_detection_system\best.pt")
 
-def load_model(model_path):
-    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-    if isinstance(checkpoint, dict) and 'model' in checkpoint:
-        model = checkpoint['model']
-        model.eval()
-        return model
-    elif isinstance(checkpoint, torch.nn.Module):
-        checkpoint.eval()
-        return checkpoint
-    else:
-        raise TypeError("Unexpected model format in the file.")
+def predict_video(video_path):
+    # Load the video
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return "Error: Could not open video."
 
-def pushbullet_noti(title, body):
-    TOKEN = 'o.rFm7mweBTeWeX1lnovShXyzfTn6nAvrF'
-    msg = {"type": "note", "title": title, "body": body}
-    resp = requests.post('https://api.pushbullet.com/v2/pushes',
-                         data=json.dumps(msg),
-                         headers={'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json'})
-    if resp.status_code != 200:
-        raise Exception('Error', resp.status_code)
-    else:
-        print('Message sent')
+    # Prepare to write the output video
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out_fps = cap.get(cv2.CAP_PROP_FPS)
+    temp_output_path = os.path.join("C:\\Users\\Falcon\\Downloads\\Projects\\Falcon Projects\\Drone-Detection-System", "temp_output.mp4")
+    output_path = os.path.join('C:\\Users\\Falcon\\Downloads\\Projects\\Falcon Projects\\Drone-Detection-System\\drone_detection_system', 'output_video.mp4')
+    out = cv2.VideoWriter(temp_output_path, cv2.VideoWriter_fourcc(*'mp4v'), out_fps, (frame_width, frame_height))
 
-st.title('Drone Detection App')
-st.sidebar.title('Drone Detection Sidebar')
-st.sidebar.subheader('Parameters')
+    # Process each frame
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-detection_type = st.sidebar.selectbox(
-    'Choose the App mode', ['About APP', 'Run on Image', 'Run on Video', 'Go live'])
+        # Perform detection on the frame
+        results = model.track(frame, imgsz=640, conf=0.3, iou=0.5, show=False)
 
-if detection_type == 'About APP':
-    st.markdown(
-        'This Application helps in detection of DRONES in an IMAGE, VIDEO or from your WEBCAM depending on your App mode.')
-    st.video(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\test\pexels-joseph-redfield-8459631 (1080p).mp4")
+        # Draw boxes on the frame
+        annotated_frame = np.squeeze(results[0].plot())
 
-elif detection_type == "Run on Image":
-    confidence = st.sidebar.slider('Detection Confidence', 0.0, 1.0, 0.6)
-    image_file = st.sidebar.file_uploader("UPLOAD an IMAGE", type=['jpg', 'png', 'jpeg'])
+        # Write the frame to the output video
+        out.write(annotated_frame)
 
-    if image_file:
-        image = Image.open(image_file).convert("RGB")
-        model = load_model(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
-        prepared_image = prepare_image(image)
-        output = model(prepared_image)
+    # Release everything when done
+    cap.release()
+    out.release()
 
-        drone_positive = output.pandas().xyxy[0]['name']
-        confidence_sent = output.pandas().xyxy[0]['confidence']
-        number_of_drones = output.pandas().xyxy[0].value_counts('name')[0]
+    # Rename the temporary file to the final output path
+    os.rename(temp_output_path, output_path)
 
-        if "drone" in drone_positive:
-            pushbullet_noti("Warning", f"{number_of_drones} Drone Detected with a confidence of {confidence_sent}")
+    return output_path  # Return the path to the fully processed video
 
-        st.image(prepared_image.squeeze(0).permute(1, 2, 0), caption='Processed Image')
-        st.write(output.pandas().xyxy[0])
+def process_video_and_update_interface(video_path, interface):
+    def update_interface(processed_video_path):
+        interface.update(value=processed_video_path, element_id="video_output")
 
-elif detection_type == "Go live":
-    confidence = st.sidebar.slider('Detection Confidence', 0.0, 1.0, 0.6)
-    confirm = st.checkbox('Start the webcam')
-    FRAME_WINDOW = st.image([])
+    def process_video(video_path):
+        processed_video_path = predict_video(video_path)
+        interface.send(update_interface, processed_video_path)
 
-    if confirm:
-        st.write("Making connection to your webcam......Please wait.")
-        cap = cv2.VideoCapture(0)  # Use 0 for the primary camera
-        model = load_model(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
+    # Process the video in a separate thread to avoid blocking the interface
+    thread = threading.Thread(target=process_video, args=(video_path,))
+    thread.start()
 
-        while confirm:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to capture video")
-                break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = Image.fromarray(frame)
-            prepared_frame = prepare_image(frame)
-            results = model(prepared_frame)
-            FRAME_WINDOW.image(np.squeeze(results.render()), use_column_width=True)
+# Set up the Gradio interface
+with gr.Blocks() as demo:
+    with gr.Tab("Upload Video"):
+        video_input = gr.Video(label="Input Video")
+        video_output = gr.Video(label="Processed Video")
 
-    else:
-        st.write('Please select the checkbox to start your webcam.')
+        video_input.change(
+            fn=lambda video_path: process_video_and_update_interface(video_path, demo),
+            inputs=video_input,
+            outputs=video_output
+        )
+
+# Launch the Gradio app
+demo.launch()

@@ -45,7 +45,7 @@ def predict_video(video_path):
             break
 
         # Perform detection on the frame using the correct parameter
-        results = model.track(frame, imgsz=640, conf=0.3, iou=0.5, show=False)
+        results = model.track(frame, imgsz=640, conf=0.3, iou=0.5)
 
         # Draw boxes on the frame
         annotated_frame = np.squeeze(results[0].plot())
@@ -57,6 +57,7 @@ def predict_video(video_path):
     cap.release()
     out.release()
 
+    print("Video processing complete. Saved to:", output_path)
     return output_path  # Return the path to the output video
 
 
@@ -76,7 +77,7 @@ with gr.Blocks() as demo:
         image_output = gr.Image(height='600px', width='auto')
         image_input.change(fn=predict_image, inputs=image_input, outputs=image_output)
     with gr.Tab("Upload Video"):
-        video_input = gr.Video()
+        video_input = gr.Video(sources="upload")
         video_output = gr.Video(render=True)
         video_input.change(fn=predict_video, inputs=video_input, outputs=video_output)
     with gr.Tab("Live"):
