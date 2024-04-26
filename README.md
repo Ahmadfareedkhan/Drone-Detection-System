@@ -1,4 +1,4 @@
-### Drone Detection System
+# Drone Detection System
 
 **Introduction**
 This Drone Detection System is designed to identify drones in images and videos using a trained YOLO model. The application allows users to upload images and videos for drone detection and will soon support live detection via webcam. It provides an intuitive Gradio interface for easy interaction.
