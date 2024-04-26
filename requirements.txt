@@ -6,3 +6,4 @@ matplotlib
 numpy
 requests
 gradio
+ultralytics
