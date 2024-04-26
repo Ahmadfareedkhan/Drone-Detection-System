@@ -11,10 +11,11 @@
 <br>
 
 ## Abstract
-Unmanned aerial vehicles (UAVs), commonly known as drones, have become increasingly prevalent in various domains, including surveillance, photography, and delivery services. However, the rapid proliferation of drones raises concerns regarding security and privacy threats. To address these concerns, effective drone detection systems are crucial for identifying and tracking drones in real-time. In this research, we present a comprehensive dataset and propose a state-of-the-art drone detection model using the YOLOv8 architecture.
+Drones, also known as unmanned aerial vehicles (UAVs), are used more and more in areas like surveillance, photography, and delivery. As drones become more common, they bring up issues about security and privacy. To deal with these issues, it's important to have systems that can detect and track drones in real time. In our study, we introduce a detailed dataset and suggest a new, advanced drone detection method based on the YOLOv8 architecture.
 
 ## Introduction
-The widespread adoption of drones has led to an urgent need for reliable drone detection systems to ensure the safety and security of public spaces. Drone detection poses unique challenges due to the small size, fast movement, and diverse appearance of drones, making traditional object detection methods insufficient. Therefore, there is a growing demand for advanced detection models that can accurately identify drones in complex environments.
+The growing use of drones has created a pressing need for effective drone detection systems to keep public spaces safe and secure. Detecting drones is challenging because they are small, move quickly, and look different from one another, which means traditional methods for spotting objects don't work well. As a result, there is an increasing need for sophisticated models that can accurately spot drones in complicated settings.
+
 YOLO (You Only Look Once) is an object detection algorithm that was introduced in 2015 by **Joseph Redmon** et al. It revolutionized the field of computer vision by providing a real-time object detection solution with impressive accuracy.
 
 ## Dataset
@@ -72,13 +73,13 @@ Our research addresses the critical need for reliable drone detection systems by
 
 ### Drone Detection with YOLOv7
 
-In addition to this work, I have also developed a drone detection model using YOLOv7. You can find that project or repository [here](https://github.com/doguilmak/Drone-Detection-YOLOv7).
+In addition to this work, I have also developed a drone detection model using YOLOv7. You can find that project or repository [here](https://github.com/Ahmadfareedkhan/Drone-Detection-System).
 
 <br>
 
 ## Contact Me
 
-If you have something to say to me please contact me:
+If you have something to say please contact us:
 
-*	Twitter: [Doguilmak](https://twitter.com/Doguilmak)
-*	Mail address: doguilmak@gmail.com
+*	Mail address: ahmadkhanfareed388@gmail.com
+*	Mail address: maneebajmal@gmail.com
