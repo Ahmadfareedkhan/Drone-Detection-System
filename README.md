@@ -26,8 +26,10 @@ Ultralytics YOLO
 # Setup
 **Clone the repository**
 
-git clone https://github.com/Ahmadfareedkhan/Drone-Detection-System.git
-cd Drone-Detection-System
+1. git clone https://github.com/Ahmadfareedkhan/Drone-Detection-System.git
+
+2. cd Drone-Detection-System
+
 
 # Install dependencies
 pip install -r requirements.txt
