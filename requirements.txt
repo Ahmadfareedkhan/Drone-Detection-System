@@ -5,3 +5,5 @@ torch
 matplotlib
 numpy
 requests
+gradio
+ultralytics

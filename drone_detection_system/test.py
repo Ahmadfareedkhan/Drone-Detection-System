@@ -1,96 +1,94 @@
-import torch
-from PIL import Image
-import numpy as np
-import streamlit as st
+import gradio as gr
+from ultralytics import YOLO
 import cv2
-import requests
-import json
-import torchvision.transforms as transforms
+import os
+import numpy as np
+import sys
+import asyncio
 
-# Define the image transformation
-def prepare_image(image):
-    transform = transforms.Compose([
-        transforms.Resize((640, 640)),  # Adjust the size as per your model's requirement
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    return transform(image).unsqueeze(0)  # Add batch dimension
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-def load_model(model_path):
-    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-    if isinstance(checkpoint, dict) and 'model' in checkpoint:
-        model = checkpoint['model']
-        model.eval()
-        return model
-    elif isinstance(checkpoint, torch.nn.Module):
-        checkpoint.eval()
-        return checkpoint
-    else:
-        raise TypeError("Unexpected model format in the file.")
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-def pushbullet_noti(title, body):
-    TOKEN = 'o.rFm7mweBTeWeX1lnovShXyzfTn6nAvrF'
-    msg = {"type": "note", "title": title, "body": body}
-    resp = requests.post('https://api.pushbullet.com/v2/pushes',
-                         data=json.dumps(msg),
-                         headers={'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json'})
-    if resp.status_code != 200:
-        raise Exception('Error', resp.status_code)
-    else:
-        print('Message sent')
 
-st.title('Drone Detection App')
-st.sidebar.title('Drone Detection Sidebar')
-st.sidebar.subheader('Parameters')
+# Load your trained model
+model = YOLO(r"C:\Users\Falcon\Downloads\Projects\Falcon Projects\Drone-Detection-System\drone_detection_system\best.pt")
 
-detection_type = st.sidebar.selectbox(
-    'Choose the App mode', ['About APP', 'Run on Image', 'Run on Video', 'Go live'])
+def predict_image(image):
+    # Perform detection
+    detections = model.track(source=image, conf=0.3, iou=0.5, show=False)
+    
+    # Render the detected image
+    detected_image = np.squeeze(detections[0].plot())
+    
+    # Check if any drones were detected
+    num_drones = len(detections[0])  # Assuming detection results are stored in xywh format
+    message = "Drone detected!" if num_drones > 0 else "No drones detected."
 
-if detection_type == 'About APP':
-    st.markdown(
-        'This Application helps in detection of DRONES in an IMAGE, VIDEO or from your WEBCAM depending on your App mode.')
-    st.video(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\test\pexels-joseph-redfield-8459631 (1080p).mp4")
+    return detected_image, message  # Return the detected image and the message
 
-elif detection_type == "Run on Image":
-    confidence = st.sidebar.slider('Detection Confidence', 0.0, 1.0, 0.6)
-    image_file = st.sidebar.file_uploader("UPLOAD an IMAGE", type=['jpg', 'png', 'jpeg'])
 
-    if image_file:
-        image = Image.open(image_file).convert("RGB")
-        model = load_model(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
-        prepared_image = prepare_image(image)
-        output = model(prepared_image)
 
-        drone_positive = output.pandas().xyxy[0]['name']
-        confidence_sent = output.pandas().xyxy[0]['confidence']
-        number_of_drones = output.pandas().xyxy[0].value_counts('name')[0]
+def predict_video(video_path):
+    # Load the video
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return "Error: Could not open video.", ""
 
-        if "drone" in drone_positive:
-            pushbullet_noti("Warning", f"{number_of_drones} Drone Detected with a confidence of {confidence_sent}")
+    drone_detected = False
+    # Prepare to write the output video
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out_fps = cap.get(cv2.CAP_PROP_FPS)
+    output_path = 'output_video.mp4'
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), out_fps, (frame_width, frame_height))
 
-        st.image(prepared_image.squeeze(0).permute(1, 2, 0), caption='Processed Image')
-        st.write(output.pandas().xyxy[0])
+    # Process each frame
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-elif detection_type == "Go live":
-    confidence = st.sidebar.slider('Detection Confidence', 0.0, 1.0, 0.6)
-    confirm = st.checkbox('Start the webcam')
-    FRAME_WINDOW = st.image([])
+        # Perform detection on the frame
+        results = model.track(frame, imgsz=640, conf=0.3, iou=0.5)
+        
+        # Check if any drones were detected in this frame
+        if len(results[0]) > 0:
+            drone_detected = True
 
-    if confirm:
-        st.write("Making connection to your webcam......Please wait.")
-        cap = cv2.VideoCapture(0)  # Use 0 for the primary camera
-        model = load_model(r"C:\Users\HP\.vscode\drone_detection\Drone-Detection-System\drone_detection_system\best.pt")
+        # Draw boxes on the frame
+        annotated_frame = np.squeeze(results[0].plot())
 
-        while confirm:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to capture video")
-                break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = Image.fromarray(frame)
-            prepared_frame = prepare_image(frame)
-            results = model(prepared_frame)
-            FRAME_WINDOW.image(np.squeeze(results.render()), use_column_width=True)
+        # Write the frame to the output video
+        out.write(annotated_frame)
 
-    else:
-        st.write('Please select the checkbox to start your webcam.')
+    # Release everything when done
+    cap.release()
+    out.release()
+
+    message = "Drone detected in video!" if drone_detected else "No drones detected in video."
+    print("Video processing complete. Saved to:", output_path)
+    return output_path, message  # Return the path to the output video and the message
+
+
+with gr.Blocks() as demo:
+    gr.Markdown("### Drone Detection System")
+    with gr.Tab("Introduction"):
+        gr.Markdown("**This Application helps in detection of DRONES in an IMAGE, VIDEO or from your WEBCAM depending on your App mode.**")
+        gr.Markdown("You Don't Necessarily need a Drone to run this app; you can use an image from google.\n\n**SAMPLE OUTPUT:**")
+        gr.Video("C:\\Users\\Falcon\\Downloads\\Projects\\Falcon Projects\\Drone-Detection-System\\Drone_Detection_Using_YOLOv5\\Drone Detection.mp4", width=800, height=600)
+    with gr.Tab("Upload Image"):
+        image_input = gr.Image()
+        image_output = gr.Image()
+        alert = gr.Label()
+        image_input.change(fn=predict_image, inputs=image_input, outputs=[image_output, alert])
+    with gr.Tab("Upload Video"):
+        video_input = gr.Video(sources="upload")
+        video_output = gr.Video(render=True)
+        alert_video = gr.Label()
+        video_input.change(fn=predict_video, inputs=video_input, outputs=[video_output, alert_video])
+    with gr.Tab("Live"):
+        gr.Markdown("Live detection will be implemented soon.")
+
+demo.launch()
