@@ -64,4 +64,4 @@ For image and video detection, upload your file and the system will automaticall
 Contributions to the Drone Detection System are welcome. Please ensure to follow the project's coding standards and submit pull requests for any new features or bug fixes.
 
 # License
-Apache License 2.0
+MIT
