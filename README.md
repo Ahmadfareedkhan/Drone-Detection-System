@@ -28,7 +28,7 @@ Ultralytics YOLO
 
 1. git clone https://github.com/Ahmadfareedkhan/Drone-Detection-System.git
 
-2. cd Drone-Detection-System
+2. cd drone-detection-system
 
 
 # Install dependencies
