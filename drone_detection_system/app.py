@@ -13,7 +13,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 # Load your trained model
-model = YOLO(r"C:\Users\Falcon\Downloads\Projects\Falcon Projects\Drone-Detection-System\drone_detection_system\best.pt")
+model = YOLO("best.pt")
 
 def predict_image(image):
     # Perform detection
