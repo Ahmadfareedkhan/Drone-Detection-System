@@ -21,8 +21,11 @@ To set up the Drone Detection System on your local machine, follow these steps:
 Ensure you have Python installed on your machine (Python 3.8 or later is recommended). You will also need the following packages:
 
 Gradio
+
 OpenCV
+
 NumPy
+
 Ultralytics YOLO
 
 
