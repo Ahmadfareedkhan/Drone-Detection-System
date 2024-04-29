@@ -1,9 +1,10 @@
 Pillow
 opencv-python
-streamlit
 torch
 matplotlib
 numpy
 requests
 gradio
 ultralytics
+google-api-python-client
+google-auth-httplib2

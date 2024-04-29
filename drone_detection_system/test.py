@@ -5,6 +5,7 @@ import os
 import numpy as np
 import sys
 import asyncio
+from gmail_api import get_service, create_message, send_message
 
 # Make sure that browser accesses the filepaths correctly
 if sys.platform == 'win32':
@@ -12,24 +13,28 @@ if sys.platform == 'win32':
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-
 # Load your trained model
 model = YOLO("best.pt")
 
+# Global Gmail API service
+service = get_service()
 
-# Function to detect drones in an image
+
+
 def predict_image(image):
     # Perform detection
     detections = model.track(source=image, conf=0.3, iou=0.5, show=False)
-    
-    # Render the detected image
     detected_image = np.squeeze(detections[0].plot())
-    
-    # Check if any drones were detected
-    num_drones = len(detections[0])  # Assuming detection results are stored in xywh format
-    message = "Drone detected!" if num_drones > 0 else "No drones detected."
+    num_drones = len(detections[0])  # Update based on your detection results structure
 
-    return detected_image, message  # Return the detected image and the message
+    if num_drones > 0:
+        message = create_message("aneeblba@gmail.com", "maneebajmal@gmail.com", "Drone Detection Alert", "A drone was detected in the uploaded image.")
+        send_message(service, "me", message)
+        alert_message = "Drone detected! Notification sent."
+    else:
+        alert_message = "No drones detected."
+
+    return detected_image, alert_message
 
 
 
@@ -41,14 +46,12 @@ def predict_video(video_path):
         return "Error: Could not open video.", ""
 
     drone_detected = False
-    # Prepare to write the output video
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     out_fps = cap.get(cv2.CAP_PROP_FPS)
     output_path = 'output_video.mp4'
     out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), out_fps, (frame_width, frame_height))
 
-    # Process each frame
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -63,17 +66,21 @@ def predict_video(video_path):
 
         # Draw boxes on the frame
         annotated_frame = np.squeeze(results[0].plot())
-
-        # Write the frame to the output video
         out.write(annotated_frame)
 
     # Release everything when done
     cap.release()
     out.release()
 
-    message = "Drone detected in video!" if drone_detected else "No drones detected in video."
-    print("Video processing complete. Saved to:", output_path)
-    return output_path, message  # Return the path to the output video and the message
+    if drone_detected:
+        message = create_message("aneeblba@gmail.com", "maneebajmal@gmail.com", "Drone Detection Alert", "A drone was detected in the uploaded video.")
+        send_message(service, "me", message)
+        alert_message = "Drone detected in video! Notification sent."
+    else:
+        alert_message = "No drones detected in video."
+
+    return output_path, alert_message
+
 
 
 # UI Implementation
