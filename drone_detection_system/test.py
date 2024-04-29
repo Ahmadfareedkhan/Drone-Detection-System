@@ -82,7 +82,6 @@ def predict_video(video_path):
     return output_path, alert_message
 
 
-
 # UI Implementation
 with gr.Blocks() as demo:
     gr.Markdown("### Drone Detection System")
@@ -105,6 +104,6 @@ with gr.Blocks() as demo:
         video_input.change(fn=predict_video, inputs=video_input, outputs=[video_output, alert_video])
         
     with gr.Tab("Live"):
-        gr.Markdown("Live detection will be implemented soon.")
+        gr.Markdown("Live detection will be implemented soon!")
 
 demo.launch()
