@@ -96,7 +96,17 @@ def start_webcam():
 
 
 # The Gradio app code with webcam support
-with gr.Blocks() as demo:
+css = """
+
+.button-class {
+    width: 200px;
+    font-size: 16px;
+    /* margin-left: 500px;*/
+    
+}
+"""
+
+with gr.Blocks(css=css) as demo:
     gr.Markdown("### Drone Detection System")
     with gr.Tab("Introduction"):
         gr.Markdown("**This Application helps in detection of DRONES in an IMAGE, VIDEO or from your WEBCAM depending on your App mode.**")
@@ -114,7 +124,7 @@ with gr.Blocks() as demo:
         video_input.change(fn=predict_video, inputs=video_input, outputs=[video_output, alert_video])
     with gr.Tab("Live"):
         gr.Markdown("**Click the button below to start the webcam for real-time drone detection.**")
-        start_button = gr.Button("Start Webcam")
+        start_button = gr.Button("Start Webcam", elem_classes="button-class")
 
         start_button.click(fn=start_webcam, inputs=[])
 
